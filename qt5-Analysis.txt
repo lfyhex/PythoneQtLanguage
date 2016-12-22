@@ -1,0 +1,53 @@
+
+QWidget
+    QWidgetPrivate
+        QWExtra(跨平台的数据接口)
+            QTLWExtra（top level widget 接口）
+                QIcon *icon; // widget icon
+                QWidgetBackingStoreTracker backingStoreTracker;
+                QBackingStore *backingStore;
+                QWindow *window; （real is QWidgetWindow, 当widge是native的时候就会创建）
+                
+                
+                
+                
+QWindow
+    QWindowPrivate
+        QWindow::SurfaceType surfaceType(QWindow::RasterSurface)
+        QPlatformWindow *platformWindow
+        exposed
+        QSurfaceFormat requestedFormat
+        
+
+QPlatformIntegration 工厂模式---------------------------------QWindowsGdiIntegration
+生产以下内容
+QPlatformPixmap
+QPlatformWindow : QPlatformSurface
+                        surface()
+    
+QPlatformBackingStore----------------------------------------------QWindowsBackingStore
+QPlatformOpenGLContext
+QPlatformSharedGraphicsCache
+QPaintEngine （createImagePaintEngine）
+QAbstractEventDispatcher
+
+QPlatformFontDatabase
+QPlatformClipboard
+QPlatformDrag
+QPlatformInputContext
+QPlatformAccessibility
+QPlatformNativeInterface
+QPlatformServices
+
+QPlatformTheme
+QPlatformOffscreenSurface
+QPlatformSessionManager
+
+
+QGuiApplicationPrivate::platformIntegration()
+
+QBackingStore(QWindow *window)
+    QPaintDevice *paintDevice()
+
+
+QWindow
