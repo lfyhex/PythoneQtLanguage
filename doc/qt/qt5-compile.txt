@@ -1,0 +1,86 @@
+====== win32 =====
+
+configure -platform win32-msvc2013 -confirm-license -mp -developer-build -opensource -no-compile-examples -opengl desktop -nomake tests -nomake examples -nomake tools -plugin-sql-sqlite -no-warnings-are-errors -openssl -I D:\Qt\openssl\include -L D:\Qt\openssl\lib -icu -I D:\Develop\third_tools\icu\include -L D:\Develop\third_tools\icu\lib
+
+configure -prefix C:\Qt\Qt5.5.1\5.5\msvc2013 -platform win32-msvc2013 -confirm-license -mp -developer-build -opensource -no-compile-examples -opengl desktop -nomake tests -nomake examples -nomake tools -plugin-sql-sqlite2 -no-warnings-are-errors -openssl -I D:\Qt\openssl\include -L D:\Qt\openssl\lib -icu -I D:\Develop\third_tools\icu\include -L D:\Develop\third_tools\icu\lib
+
+-prefix C:\Qt\Qt5.5.1\5.5\msvc2013
+
+nmake confclean
+
+======= macosx i386====
+
+use openssl
+MACOSX_DEPLOYMENT_TARGET=10.7
+set in user's profile
+
+OPENSSL_LIBS='-L/Volumes/dev/openssl/i386/lib -lssl -lcrypto' \
+./configure \
+-debug-and-release \
+-no-optimized-tools \
+-opensource \
+-confirm-license \
+-c++std c++98 \
+-shared \
+-largefile \
+-accessibility \
+-plugin-sql-sqlite \
+-qml-debug \
+-no-pkg-config \
+-system-zlib \
+-no-mtdev \
+-no-journald \
+-no-syslog \
+-qt-libpng \
+-qt-libjpeg \
+-qt-freetype \
+-qt-harfbuzz \
+-openssl-linked \
+-no-libproxy \
+-qt-pcre \
+-no-xcb \
+-qt-xkbcommon-x11 \
+-no-xinput2 \
+-no-xcb-xlib \
+-no-glib \
+-no-pulseaudio \
+-no-alsa \
+-no-gtkstyle \
+-no-compile-examples \
+-gui \
+-widgets \
+-rpath \
+-cups \
+-iconv \
+-no-evdev \
+-no-tslib \
+-no-icu \
+-fontconfig \
+-strip \
+-pch \
+-no-ltcg \
+-dbus-runtime \
+-no-separate-debug-info \
+-no-eglfs \
+-no-kms \
+-no-gbm \
+-no-directfb \
+-no-linuxfb \
+-no-mirclient \
+-qpa cocoa \
+-no-gcc-sysroot \
+-qreal double \
+-opengl desktop \
+-no-libinput \
+-no-gstreamer \
+-no-system-proxies \
+-no-warnings-are-errors \
+-framework \
+-no-securetransport \
+-sdk macosx10.9 \
+-nomake examples \
+-nomake tests \
+-prefix /usr/local/Qt-5.6.2/5.6/clang_32 \
+-platform macx-clang-32 \
+-I /Volumes/dev/openssl/i386/include
+

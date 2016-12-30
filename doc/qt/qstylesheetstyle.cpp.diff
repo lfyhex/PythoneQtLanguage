@@ -1,0 +1,141 @@
+--- /Volumes/dev/5.6.2/orig/qt-everywhere-opensource-src-5.6.2/qtbase/src/widgets/styles/qstylesheetstyle.cpp	2016-09-16 13:49:42.000000000 +0800
++++ /Volumes/dev/5.6.2/qt-everywhere-opensource-src-5.6.2/qtbase/src/widgets/styles/qstylesheetstyle.cpp	2016-11-08 18:39:17.000000000 +0800
+@@ -858,6 +858,23 @@
+     return QStyle::SP_CustomBase;
+ }
+ 
++static QPixmap loadPixmapHDPIAware(const QString &pixmapFile)
++{
++    QPixmap pixmap;
++
++    QIcon icn;
++    icn.addFile(pixmapFile);
++
++    const QList<QSize> &lstSizes = icn.availableSizes();
++    if (!lstSizes.isEmpty())
++    {
++        QSize icnSize = lstSizes.at(0);
++        pixmap = icn.pixmap(icnSize);
++    }
++
++    return pixmap;
++}
++
+ QRenderRule::QRenderRule(const QVector<Declaration> &declarations, const QObject *object)
+ : features(0), hasFont(false), pal(0), b(0), bg(0), bd(0), ou(0), geo(0), p(0), img(0), clipset(0)
+ {
+@@ -910,7 +927,7 @@
+     origin = Origin_Padding;
+     Origin clip = Origin_Border;
+     if (v.extractBackground(&brush, &uri, &repeat, &alignment, &origin, &attachment, &clip))
+-        bg = new QStyleSheetBackgroundData(brush, QPixmap(uri), repeat, alignment, origin, attachment, clip);
++        bg = new QStyleSheetBackgroundData(brush, loadPixmapHDPIAware(uri), repeat, alignment, origin, attachment, clip);
+ 
+     QBrush sfg, fg;
+     QBrush sbg, abg;
+@@ -949,7 +966,7 @@
+                     bd->bi = new QStyleSheetBorderImageData;
+ 
+                 QStyleSheetBorderImageData *bi = bd->bi;
+-                bi->pixmap = QPixmap(uri);
++                bi->pixmap = loadPixmapHDPIAware(uri);
+                 for (int i = 0; i < 4; i++)
+                     bi->cuts[i] = cuts[i];
+                 bi->horizStretch = horizStretch;
+@@ -1132,7 +1149,7 @@
+     bool wasSmoothPixmapTransform = p->renderHints() & QPainter::SmoothPixmapTransform;
+     p->setRenderHint(QPainter::SmoothPixmapTransform);
+     qDrawBorderPixmap(p, rect, targetMargins, borderImageData->pixmap,
+-                      QRect(QPoint(), borderImageData->pixmap.size()), sourceMargins,
++                      QRect(QPoint(), borderImageData->pixmap.size()), sourceMargins * borderImageData->pixmap.devicePixelRatio(),
+                       QTileRules(tileMode2TileRule[borderImageData->horizStretch], tileMode2TileRule[borderImageData->vertStretch]));
+     p->setRenderHint(QPainter::SmoothPixmapTransform, wasSmoothPixmapTransform);
+     unsetClip(p);
+@@ -1153,6 +1170,39 @@
+     }
+ }
+ 
++static void qt_draw_tile_pixel_ratio(QPainter *p, qreal x, qreal y, qreal w, qreal h,
++                                     const QPixmap &pixmap, qreal xOffset, qreal yOffset)
++{
++    qreal yPos, xPos, drawH, drawW, pmWidth, pmHeight, yOff, xOff;
++    const qreal pmscale = pixmap.devicePixelRatio();
++
++    pmWidth = pixmap.width() / pmscale;
++    pmHeight = pixmap.height() / pmscale;
++
++    yPos = y;
++    yOff = yOffset;
++    while(yPos < y + h) {
++        drawH = pmHeight - yOff;            // Cropping first row
++        if (yPos + drawH > y + h)           // Cropping last row
++            drawH = y + h - yPos;
++        xPos = x;
++        xOff = xOffset;
++        while(xPos < x + w) {
++            drawW = pmWidth - xOff;             // Cropping first column
++            if (xPos + drawW > x + w)           // Cropping last column
++                drawW = x + w - xPos;
++            if (drawW > 0 && drawH > 0)
++                p->drawPixmap(QRectF(xPos, yPos, drawW, drawH), pixmap,
++                              QRectF(QPointF(xOff, yOff) * pmscale,
++                                     QSizeF(drawW, drawH) * pmscale));
++            xPos += drawW;
++            xOff = 0;
++        }
++        yPos += drawH;
++        yOff = 0;
++    }
++}
++
+ void QRenderRule::drawBackgroundImage(QPainter *p, const QRect &rect, QPoint off)
+ {
+     if (!hasBackground())
+@@ -1172,30 +1222,35 @@
+     if (background()->attachment == Attachment_Fixed)
+         off = QPoint(0, 0);
+ 
++    QSize szPixmap = bgp.size() / bgp.devicePixelRatio();
+     QRect r = originRect(rect, background()->origin);
+-    QRect aligned = QStyle::alignedRect(Qt::LeftToRight, background()->position, bgp.size(), r);
++    QRect aligned = QStyle::alignedRect(Qt::LeftToRight, background()->position, szPixmap, r);
+     QRect inter = aligned.translated(-off).intersected(r);
+ 
+     switch (background()->repeat) {
+     case Repeat_Y:
+-        p->drawTiledPixmap(inter.x(), r.y(), inter.width(), r.height(), bgp,
+-                           inter.x() - aligned.x() + off.x(),
+-                           bgp.height() - int(aligned.y() - r.y()) % bgp.height() + off.y());
++        qt_draw_tile_pixel_ratio(p, inter.x(), r.y(), inter.width(), r.height(), bgp,
++                                 inter.x() - aligned.x() + off.x(),
++                                 szPixmap.height() - int(aligned.y() - r.y()) % szPixmap.height() + off.y());
+         break;
+     case Repeat_X:
+-        p->drawTiledPixmap(r.x(), inter.y(), r.width(), inter.height(), bgp,
+-                           bgp.width() - int(aligned.x() - r.x())%bgp.width() + off.x(),
+-                           inter.y() - aligned.y() + off.y());
++        qt_draw_tile_pixel_ratio(p, r.x(), inter.y(), r.width(), inter.height(), bgp,
++                                 szPixmap.width() - int(aligned.x() - r.x()) % szPixmap.width() + off.x(),
++                                 inter.y() - aligned.y() + off.y());
+         break;
+     case Repeat_XY:
+-        p->drawTiledPixmap(r, bgp,
+-                           QPoint(bgp.width() - int(aligned.x() - r.x())% bgp.width() + off.x(),
+-                                  bgp.height() - int(aligned.y() - r.y())%bgp.height() + off.y()));
++        qt_draw_tile_pixel_ratio(p, r.x(), r.y(), r.width(), r.height(), bgp,
++                                 szPixmap.width() - int(aligned.x() - r.x()) % szPixmap.width() + off.x(),
++                                 szPixmap.height() - int(aligned.y() - r.y()) % szPixmap.height() + off.y());
+         break;
+     case Repeat_None:
+     default:
+-        p->drawPixmap(inter.x(), inter.y(), bgp, inter.x() - aligned.x() + off.x(),
+-                      inter.y() - aligned.y() + off.y(), inter.width(), inter.height());
++        QPointF pt(inter.x() - aligned.x() + off.x(),
++                   inter.y() - aligned.y() + off.y());
++        pt *= bgp.devicePixelRatio();
++        p->drawPixmap(inter.x(), inter.y(), bgp, pt.x(), pt.y(),
++                      inter.width() * bgp.devicePixelRatio(),
++                      inter.height() * bgp.devicePixelRatio());
+         break;
+     }
+ 

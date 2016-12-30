@@ -1,0 +1,11 @@
+--- ../orig/qt-everywhere-opensource-src-5.6.2/qtbase/src/gui/text/qcssparser.cpp	2016-09-16 13:49:42.000000000 +0800
++++ qtbase/src/gui/text/qcssparser.cpp	2016-11-23 14:46:12.000000000 +0800
+@@ -1714,7 +1714,7 @@
+         if (icon.isNull())
+             icon = QIcon(uri);
+         else
+-            icon.addPixmap(uri, mode, state);
++            icon.addFile(uri, QSize(), mode, state);
+ 
+         if (i == d->values.count())
+             break;
