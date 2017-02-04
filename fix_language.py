@@ -3,6 +3,7 @@ import sys
 import os
 import xml.etree.ElementTree as ET
 import re
+import configparser
 from colorama import init, Back
 
 init()
@@ -254,6 +255,9 @@ def change(tsfolder, codefolder):
     '''
     imp
     '''
+    if not os.path.exists(tsfolder) or not os.path.exists(codefolder):
+        print('ts folder or code folder not exist')
+        return
     ts_infos = parse_ts_files(tsfolder)
     for tsi in ts_infos:
         #first find code location
@@ -273,6 +277,16 @@ def run():
         tsf = sys.argv[2]
         codef = sys.argv[4]
         change(tsf, codef)
+    else:
+        #read config file
+        config_fn = 'fix_language.ini'
+        if os.path.exists(config_fn):
+            print('read configure ini file')
+            cfg = configparser.ConfigParser()
+            cfg.read(config_fn)
+            tsf = cfg['GLOBAL']['tsdir']
+            codef = cfg['GLOBAL']['codedir']
+            change(tsf, codef)
 
 if __name__ == '__main__':
     run()
